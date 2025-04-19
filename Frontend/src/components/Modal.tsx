@@ -7,18 +7,21 @@ import {
   Button,
   TextField,
   MenuItem,
-  Box
+  Box,
 } from '@mui/material';
-
 import { Task } from '../interfaces/ITask';
 import { User } from '../interfaces/IUser';
 import { FormData } from '../interfaces/IFormData';
 import { Errors } from '../interfaces/IErrors';
+import TaskService from '../services/tasksApi';
+import { jwtDecode } from 'jwt-decode';
 
-const priorities = ['Низкий', 'Средний', 'Высокий'];
-const status = ['к выполнению', 'выполняется', 'выполнена', 'отменена'];
+const taskService = new TaskService();
+const priorities = ['низкий', 'средний', 'высокий'];
+const statuses = ['к выполнению', 'выполняется', 'выполнена', 'отменена'];
 
 interface TaskModalProps {
+  id: string;
   task: Task | null;
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   role: string;
@@ -29,6 +32,7 @@ interface TaskModalProps {
 }
 
 const TaskModal: React.FC<TaskModalProps> = ({
+  id,
   task,
   setTasks,
   role,
@@ -43,7 +47,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
     priority: '',
     dueDate: '',
     responsible: '',
-    status: 'Ожидает',
+    status: 'к выполнению',
   });
 
   const [errors, setErrors] = useState<Errors>({
@@ -55,15 +59,14 @@ const TaskModal: React.FC<TaskModalProps> = ({
     status: false,
   });
 
-
   useEffect(() => {
     if (task) {
       setFormData({
-        title: task.title || '',
-        description: task.description || '',
-        priority: task.priority || '',
+        title: task.title,
+        description: task.description,
+        priority: task.priority,
         dueDate: task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : '',
-        responsible: task.responsible,
+        responsible: task.responsible_id || '',
         status: task.status,
       });
     } else {
@@ -72,8 +75,8 @@ const TaskModal: React.FC<TaskModalProps> = ({
         description: '',
         priority: '',
         dueDate: '',
-        responsible: '',
-        status: 'Ожидает',
+        responsible: role === 'Пользователь' ? id : '',
+        status: 'к выполнению',
       });
     }
 
@@ -85,46 +88,66 @@ const TaskModal: React.FC<TaskModalProps> = ({
       responsible: false,
       status: false,
     });
-  }, [task]);
+  }, [task, id, role]);
 
   const handleChange = (field: keyof FormData) => (e: ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [field]: e.target.value });
     setErrors({ ...errors, [field]: false });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const newErrors: Errors = {
       title: !formData.title.trim(),
       description: !formData.description.trim(),
       priority: !formData.priority,
       dueDate: !formData.dueDate,
-      responsible: !formData.responsible.trim(),
+      responsible: !formData.responsible,
       status: !formData.status,
     };
 
     setErrors(newErrors);
+    if (Object.values(newErrors).some(Boolean)) return;
 
-    const hasError = Object.values(newErrors).some((v) => v);
-    if (hasError) return;
+    try {
+      if (!task) {
+        const tokens = JSON.parse(localStorage.getItem('auth') || '{}');
+        const userData: any = jwtDecode(tokens.token);
 
-    const createOrEditTask: Task = {
-      ...task!,
-      ...formData,
-      due_date: new Date(formData.dueDate),
-      updated_date: new Date(),
-      status: formData.status as Task['status'],
-    };
-    
+        const newTask = {
+          title: formData.title,
+          description: formData.description,
+          priority: formData.priority,
+          due_date: new Date(formData.dueDate),
+          status: 'к выполнению',
+          creator_id: userData.id,
+          responsible_id: formData.responsible,
+          created_date: new Date(),
+          updated_date: new Date(),
+        };
 
-    setTasks((prevTasks) => {
-      if (task) {
-        return prevTasks.map((t) => (t.id === task.id ? { ...t, ...createOrEditTask } : t));
+        const createdTask = await taskService.createTask(newTask);
+        setTasks(prev => [...prev, createdTask]);
       } else {
-        return [...prevTasks, createOrEditTask];
-      }
-    });
+        const updatedTask: Task = {
+          ...task,
+          title: formData.title,
+          description: formData.description,
+          priority: formData.priority,
+          due_date: new Date(formData.dueDate),
+          status: formData.status,
+          responsible_id: formData.responsible,
+          updated_date: new Date(),
+        };
 
-    onClose();
+        await taskService.updateTask(task.id, updatedTask);
+        setTasks(prev => prev.map(t => (t.id === updatedTask.id ? updatedTask : t)));
+      }
+
+      window.location.reload();
+      onClose();
+    } catch (error) {
+      console.error('Ошибка при сохранении задачи', error);
+    }
   };
 
   const onClose = () => {
@@ -132,59 +155,64 @@ const TaskModal: React.FC<TaskModalProps> = ({
     setSelectedTask(null);
   };
 
-  console.log('задача', formData)
+  const isCreating = !task;
+  const isUser = role === 'Пользователь';
+  const isManager = role === 'Руководитель';
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth>
-      <DialogTitle>{task ? 'Редактировать задачу' : 'Новая задача'}</DialogTitle>
+      <DialogTitle>{isCreating ? 'Новая задача' : 'Редактировать задачу'}</DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-        {role === 'admin' && (
-          <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column' }}>
-            <TextField
-              sx={{ mt: 1 }}
-              label="Название"
-              fullWidth
-              value={formData.title}
-              onChange={handleChange('title')}
-              error={errors.title}
-              helperText={errors.title && 'Заполните название'}
-            />
-            <TextField
-              sx={{ mt: 1 }}
-              label="Описание"
-              fullWidth
-              multiline
-              rows={4}
-              value={formData.description}
-              onChange={handleChange('description')}
-              error={errors.description}
-              helperText={errors.description && 'Заполните описание'}
-            />
-            <TextField
-              label="Приоритет"
-              select
-              fullWidth
-              value={formData.priority}
-              onChange={handleChange('priority')}
-              error={errors.priority}
-              helperText={errors.priority && 'Выберите приоритет'}
-            >
-              {priorities.map((p) => (
-                <MenuItem key={p} value={p}>
-                  {p}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              type="date"
-              label="Срок выполнения"
-              fullWidth
-              value={formData.dueDate}
-              onChange={handleChange('dueDate')}
-              error={errors.dueDate}
-              helperText={errors.dueDate && 'Укажите срок'}
-              InputLabelProps={{ shrink: true }}
-            />
+        <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column' }}>
+        {(role === 'Руководитель' || (role === 'Пользователь' && !task)) && (
+          <TextField
+            sx={{mt: 1}}
+            label="Название"
+            fullWidth
+            value={formData.title}
+            onChange={handleChange('title')}
+            error={errors.title}
+            helperText={errors.title && 'Заполните название'}
+          />
+        )}
+          {(role === 'Руководитель' || (role === 'Пользователь' && !task)) && (<TextField
+            label="Описание"
+            fullWidth
+            multiline
+            rows={4}
+            value={formData.description}
+            onChange={handleChange('description')}
+            error={errors.description}
+            helperText={errors.description && 'Заполните описание'}
+          />)}
+          {(role === 'Руководитель' || (role === 'Пользователь' && !task)) && (<TextField
+            label="Приоритет"
+            select
+            fullWidth
+            value={formData.priority}
+            onChange={handleChange('priority')}
+            error={errors.priority}
+            helperText={errors.priority && 'Выберите приоритет'}
+          >
+            {priorities.map((p) => (
+              <MenuItem key={p} value={p}>
+                {p}
+              </MenuItem>
+            ))}
+          </TextField>)}
+
+          {(role === 'Руководитель' || (role === 'Пользователь' && !task)) && ( <TextField
+            type="date"
+            label="Срок выполнения"
+            fullWidth
+            value={formData.dueDate}
+            onChange={handleChange('dueDate')}
+            error={errors.dueDate}
+            helperText={errors.dueDate && 'Укажите срок'}
+            InputLabelProps={{ shrink: true }}
+          />)}
+
+          {role === 'Руководитель' && (
             <TextField
               label="Ответственный"
               select
@@ -196,35 +224,37 @@ const TaskModal: React.FC<TaskModalProps> = ({
             >
               {users.map((user) => (
                 <MenuItem key={user.id} value={user.id}>
-                  {user.fullName}
+                  {`${user.lastname} ${user.name} ${user.patronymic}`}
                 </MenuItem>
               ))}
             </TextField>
-          </Box>
-        )}
-        {task && (
-          <TextField
-            sx={{ mt: role === 'admin' ? 0 : 1 }}
-            label="Статус"
-            select
-            fullWidth
-            value={formData.status}
-            onChange={handleChange('status')}
-            error={errors.status}
-            helperText={errors.status && 'Выберите статус'}
-          >
-            {status.map((s) => (
-              <MenuItem key={s} value={s}>
-                {s}
-              </MenuItem>
-            ))}
-          </TextField>
-        )}
+          )}
+
+          {task && (
+            <TextField
+              sx={{mt: 1}}
+              label="Статус"
+              select
+              fullWidth
+              value={formData.status}
+              onChange={handleChange('status')}
+              error={errors.status}
+              helperText={errors.status && 'Выберите статус'}
+            >
+              {statuses.map((s) => (
+                <MenuItem key={s} value={s}>
+                  {s}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+        </Box>    
       </DialogContent>
+
       <DialogActions>
         <Button onClick={onClose}>Отмена</Button>
         <Button variant="contained" onClick={handleSubmit}>
-          {task ? 'Сохранить' : 'Добавить задачу'}
+          {isCreating ? 'Добавить задачу' : 'Сохранить'}
         </Button>
       </DialogActions>
     </Dialog>

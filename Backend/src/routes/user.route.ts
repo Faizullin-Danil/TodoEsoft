@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { UserController } from '../controllers/user.controller';
 import { body } from 'express-validator';
+import { authenticateToken } from '../middleware/auth.middleware';
 
 const router = Router();
 const userController = new UserController();
@@ -17,7 +18,8 @@ router.post(
 );
 
 router.post('/login', userController.login);
-router.post('/logout', userController.logout);
-router.post('/refresh-token', userController.refreshToken); // новый маршрут
+router.post('/refresh-token', userController.refreshToken); 
+
+router.get('/users', authenticateToken, userController.getAllUsers)
 
 export default router;

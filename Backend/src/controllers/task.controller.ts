@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { TaskService } from '../services/task.service';
 import { validationResult } from 'express-validator';
 import { AuthRequest } from '../interfaces/IAuthRequest';
+import { Task } from '../interfaces/ITask';
 
 export class TaskController {
   private taskService = new TaskService();
@@ -26,15 +27,15 @@ export class TaskController {
 
             // Создаем задачу
             const task = await this.taskService.createTask({
-            title,
-            description,
-            due_date,
-            priority,
-            status: 'к выполнению',
-            creator_id, 
-            responsible_id,
-            created_date: new Date(),
-            updated_date: new Date(),
+                title,
+                description,
+                due_date,
+                priority,
+                status: 'к выполнению',
+                creator_id, 
+                responsible_id,
+                created_date: new Date(),
+                updated_date: new Date(),
             });
 
             res.status(201).json(task); // Возвращаем созданную задачу
@@ -75,6 +76,8 @@ export class TaskController {
     // };
 
   // Обновить задачу
+    // TaskController.ts
+
     updateTask = async (req: Request, res: Response, next: NextFunction) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -83,14 +86,24 @@ export class TaskController {
         }
 
         try {
-            const { id } = req.params;
+            const { id } = req.params
+            const { title, description, priority, due_date, status, responsible_id} = req.body;
 
-            const updatedData = req.body;
-            
-            const updatedTask = await this.taskService.updateTask(parseInt(id), updatedData);
+            const updatedTask = await this.taskService.updateTask(id, {
+                title,
+                description,
+                due_date,
+                priority,
+                status: status,
+                responsible_id,
+                created_date: new Date(),
+                updated_date: new Date(),
+            });
+
             res.status(200).json(updatedTask);
         } catch (error) {
             next(error);
         }
     }
+
 }

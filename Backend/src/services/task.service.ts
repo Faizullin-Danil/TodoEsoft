@@ -22,7 +22,7 @@ export class TaskService {
     //     return this.taskRepository.deleteTask(id);
     //   }
     
-    async updateTask(id: number, data: Partial<Task>): Promise<Task> {
-        return this.taskRepository.updateTask(id, data);
+    async updateTask(id: string, data: Partial<Task>): Promise<Task> {
+        return this.taskRepository.updateTask(parseInt(id), data);
     }
 }

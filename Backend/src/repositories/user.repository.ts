@@ -13,6 +13,17 @@ export class UserRepository {
       .returning('*');
     return newUser;
   }
+
+  async findById(id: string): Promise<User | null> {
+    const user = await db<User>('users').where({ id }).first();
+    return user || null;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    const users = await db<User>('users')
+    return users;
+  }
+
 }
 
 

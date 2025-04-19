@@ -11,7 +11,7 @@ interface AuthProviderProps {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [auth, setAuth] = useState(false)
+  const [auth, setAuth] = useState(true)
 
   return (
     <AuthContext.Provider value={{ auth, setAuth }}>

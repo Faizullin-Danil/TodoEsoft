@@ -43,4 +43,15 @@ export class UserService {
 
     return { token, refreshToken };
   }
+
+  async getUserById(userId: string): Promise<User | null> {
+    const user = await this.userRepository.findById(userId);
+    return user || null;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    const users = await this.userRepository.getAllUsers();
+    return users;
+  }
+
 }

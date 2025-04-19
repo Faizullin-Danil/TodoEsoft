@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -53,7 +53,6 @@ const AuthPage = () => {
     } else {
       timerError(response)
     }
-    console.log(response)
   };
 
   const handleRegister = async () => {

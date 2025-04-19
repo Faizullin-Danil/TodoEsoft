@@ -1,116 +1,48 @@
 import { Autocomplete, Box, Button, TextField } from '@mui/material';
 import TaskCard from "../components/TaskCard";
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Modal from '../components/Modal';
 import { Task } from '../interfaces/ITask';
+import UserService from '../services/usersApi';
+import TaskService from '../services/tasksApi';
+import { jwtDecode } from 'jwt-decode';
+import { User } from '../interfaces/IUser';
+import { useAuth } from '../contexts/AuthContext';
 
-const users = [
-  {
-    id: 1,
-    firstName: 'Иван',
-    lastName: 'Иванов',
-    patronymic: 'Иванович',
-    login: 'ivanov',
-    password: 'password123',
-    role: 'admin', // Роль пользователя: admin или user
-  },
-  {
-    id: 2,
-    firstName: 'Алина',
-    lastName: 'Петрова',
-    // patronymic: 'Александровна',
-    login: 'petrova',
-    password: 'password456',
-    role: 'user', // Роль пользователя
-  },
-  {
-    id: 3,
-    firstName: 'Мария',
-    lastName: 'Сидорова',
-    patronymic: 'Сергеевна',
-    login: 'sidorova',
-    password: 'password789',
-    role: 'user',
-  },
-];
-
-const arrayTasks = [
-  {
-    title: 'задача 1',
-    description: 'Проверить документацию и подготовить отчёт.',
-    priority: 'средний',
-    dueDate: new Date(2025, 3, 23),
-    responsible: 'Захар',
-    status: 'На выполнении',
-    updatedAt: new Date(2020, 0, 26)
-  },
-  {
-    title: 'задача 2',
-    description: 'Связаться с клиентом и уточнить детали проекта.',
-    priority: 'высокий',
-    dueDate: new Date(2025, 3, 16),
-    responsible: 'Алина',
-    status: 'Выполняется',
-    updatedAt: new Date(2025, 3, 9)
-  },
-  {
-    title: 'задача 3',
-    description: 'Подготовить презентацию для совещания.',
-    priority: 'низкий',
-    dueDate: new Date(2025, 4, 20),
-    responsible: 'Иван',
-    status: 'Ожидает',
-    updatedAt: new Date(2025, 3, 15)
-  },
-  {
-    title: 'задача 4',
-    description: 'Обновить внутренние инструкции по безопасности.',
-    priority: 'средний',
-    dueDate: new Date(2025, 3, 18),
-    responsible: 'Мария',
-    status: 'выполняется',
-    updatedAt: new Date(2025, 3, 16)
-  },
-  {
-    title: 'задача 5',
-    description: 'Завершить отчёт по кварталу и отправить руководству.',
-    priority: 'высокий',
-    dueDate: new Date(2025, 4, 1),
-    responsible: 'Никита',
-    status: 'выполнена',
-    updatedAt: new Date(2025, 3, 10)
-  },
-  {
-    title: 'задача 6',
-    description: 'Отменить устаревшие заказы и уведомить клиентов.',
-    priority: 'Низкий',
-    dueDate: new Date(2025, 3, 30),
-    responsible: 'Ольга',
-    status: 'Отменена',
-    updatedAt: new Date(2025, 3, 12)
-  }
-];
-
-const userOptions = users.map(user => ({
-  id: user.id,
-  fullName: `${user.lastName} ${user.firstName}${user.patronymic ? ` ${user.patronymic}` : ''}`
-}));
-
-
-
-
+const taskService = new TaskService();
+const userService = new UserService();
 
 const TasksPage = () => {
-  const role = 'admin'
-  const [isRegistered, setIsRegistered] = useState(false)
-  const [tasks, setTasks] = useState(arrayTasks)
+  const [role, setRole] = useState()
+  const [tasks, setTasks] = useState<Task[] | null>()
+  const [users, setUsers] = useState<User[]>([]); // было User
   const [dateFilter, setDateFilter] = useState<string | null>(null);
   const [responsibleFilter, setResponsibleFilter] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState<boolean>(false)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null); // Инициализируем как null
+  const { setAuth } = useAuth();
 
-  // console.log(userOptions)
+  const tokens = JSON.parse(localStorage.getItem('auth'));
+  const userData = jwtDecode(tokens.token)
 
+  useEffect(() => {
+    setAuth(true)
+    const getInfoFromServer = async () => {
+
+      
+      setRole(userData.role)
+
+      const allTasks = await taskService.getAllTasks()
+      setTasks(allTasks)
+
+      const allUsers = await userService.getAllUsers()
+      setUsers(allUsers)
+    };
+
+    getInfoFromServer();
+
+  }, []);    
+  
   const handleClear = () => {
     setDateFilter(null);
     setResponsibleFilter(null);
@@ -120,19 +52,37 @@ const TasksPage = () => {
   const onWeek = new Date();
   onWeek.setDate(onWeek.getDate() + 7);  
 
-  const filteredTasks = tasks.filter((task) => {
-    const due = task.dueDate;
+  let tasksByRole = []
 
-    const matchesDate = !dateFilter || (
-      dateFilter === 'На сегодня' && due.toDateString() === onToday.toDateString() ||
-      dateFilter === 'На неделю' && due > onToday && due <= onWeek ||
-      dateFilter === 'На будущее' && due > onWeek
-    );
+  if (role === 'Пользователь') {
+    tasksByRole = tasks?.filter((task) => task.responsible_id === userData.id);
+  } else {
+    tasksByRole = tasks;
+  }
+  
 
-    const matchesResponsible = !responsibleFilter || task.responsible === responsibleFilter;
-
+  const filteredTasks = tasksByRole?.filter((task) => {
+    if (!tasks) return [];
+    
+    const due = new Date(task.due_date);
+  
+    const matchesDate =
+      !dateFilter ||
+      (dateFilter === 'На сегодня' && due.toDateString() === onToday.toDateString()) ||
+      (dateFilter === 'На неделю' && due > onToday && due <= onWeek) ||
+      (dateFilter === 'На будущее' && due > onWeek);
+  
+      const fullResponsible = `${task.responsible_lastname} ${task.responsible_name} ${task.responsible_patronymic}`;
+      const matchesResponsible = !responsibleFilter || fullResponsible.toLowerCase().includes(responsibleFilter.toLowerCase());
+        
     return matchesDate && matchesResponsible;
-  });
+  }) || [];
+
+  
+
+  console.log('tasks', tasks)
+  console.log('userData', userData)
+
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', width: 850}}>
@@ -159,30 +109,25 @@ const TasksPage = () => {
           renderInput={(params) => <TextField {...params} label="По дате завершения" />}
         />
 
-        {role === 'admin' && 
+        {role === 'Руководитель' && 
           <Autocomplete
             disablePortal
             value={responsibleFilter}
             onChange={(_, newValue) => setResponsibleFilter(newValue)}
-            options={['Захар', 'Алина', 'Иван', 'Мария', 'Никита', 'Ольга']}
+            options={users.map(user => `${user.lastname} ${user.name} ${user.patronymic}`)}
             sx={{
               width: '300px',
               '& .MuiOutlinedInput-root': {
-                '&:hover fieldset': {
-                  borderColor: 'black',
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: 'black',
-                },
+                '&:hover fieldset': { borderColor: 'black' },
+                '&.Mui-focused fieldset': { borderColor: 'black' },
               },
-              '& .MuiInputLabel-root.Mui-focused': {
-                color: 'black',
-              },
+              '& .MuiInputLabel-root.Mui-focused': { color: 'black' },
             }}
             renderInput={(params) => (
               <TextField {...params} sx={{ color: 'white' }} label="По ответственным" />
             )}
-        />}
+          />
+        }
         <Box sx={{display: 'flex', alignItems: 'center', marginLeft: 'auto'}}>
           <Button onClick={handleClear} sx={{ color: 'black', height: '100%', '&:focus': { outline: 'none' } }}>
             Очистить
@@ -197,17 +142,17 @@ const TasksPage = () => {
       <Box sx={{ mt: 1 }}>
         {filteredTasks.length > 0 ? (
           filteredTasks
-          .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()) 
+          .sort((a, b) => new Date(b.updated_date).getTime() - new Date(a.updated_date).getTime())
           .map((task, index) => (
             <TaskCard
               key={index}
               description={task.description}
               title={task.title}
               priority={task.priority}
-              dueDate={task.dueDate}
-              responsible={task.responsible}
+              dueDate={task.due_date}
+              responsible={[task.responsible_lastname, task.responsible_name, task.responsible_patronymic].filter(Boolean).join(' ')}
               status={task.status}
-              updatedAt={task.updatedAt}
+              updatedAt={task.updated_date}
               onClick={() => {
                 setSelectedTask(task)
                 setModalOpen(true);    
@@ -221,8 +166,9 @@ const TasksPage = () => {
 
       {modalOpen && 
         <Modal 
+          id={userData.id}
           task={selectedTask} 
-          users={userOptions}
+          users={users}
           setTasks={setTasks} 
           role={role} 
           open={modalOpen} 

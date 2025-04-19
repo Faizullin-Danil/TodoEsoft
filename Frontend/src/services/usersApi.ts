@@ -22,7 +22,6 @@ class UserService {
     login = async (logindData: ILoginDate) => {
         try {
             const response = await $api.post('api/login', logindData)
-            console.log(response)
 
             localStorage.setItem('auth', JSON.stringify(response.data));
 
@@ -30,6 +29,18 @@ class UserService {
         } catch (error: any) {
             return error.response.data.message;
 
+        }
+    }
+
+    getAllUsers = async () => {
+        try {
+            const response = await $api.get('api/users')
+
+            // console.log('users', response)
+
+            return response.data
+        } catch (error: any) {
+            return error.response.data.message;
         }
     }
 }

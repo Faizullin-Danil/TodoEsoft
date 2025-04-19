@@ -3,6 +3,9 @@ import { UserService } from '../services/user.service';
 import { validationResult } from 'express-validator';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import { console } from 'inspector';
+import { AuthRequest } from '../interfaces/IAuthRequest';
+import { User } from '../interfaces/IUser';
+
 
 export class UserController {
   private userService = new UserService();
@@ -18,10 +21,11 @@ export class UserController {
     try {
       console.log('Контроллер вызван');
   
-      const { name, lastname, patronymic, login, password } = req.body;
+      const { name, lastname, patronymic, login, password, role } = req.body;
   
-      // Логируем, что параметры успешно получены
-      console.log('Получены параметры:', { name, lastname, patronymic, login, password });
+      console.log('Получены параметры:', { name, lastname, patronymic, login, password, role });
+  
+      const assignedRole = role && role.trim() !== '' ? role : 'Пользователь';
   
       const result = await this.userService.registration({
         name,
@@ -29,7 +33,7 @@ export class UserController {
         patronymic,
         login,
         password,
-        role: 'Пользователь',
+        role: assignedRole,
       });
   
       console.log('Результат регистрации:', result);
@@ -41,12 +45,15 @@ export class UserController {
     }
   };
   
+  
 
   login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { login, password } = req.body;
       
       const result = await this.userService.login(login, password);
+
+      console.log('result', result)
       
       res.status(200).json(result);
     } catch (error: any) {
@@ -54,17 +61,8 @@ export class UserController {
     }
   };
 
-  logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      res.status(200).json({ message: 'Вы вышли из системы' });
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
-    }
-  };
-
   refreshToken = async (req: Request, res: Response): Promise<void> => {
     try {
-      // Проверка наличия refresh токена в заголовке
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
         res.status(401).json({ message: 'Refresh токен отсутствует' });
@@ -87,4 +85,14 @@ export class UserController {
       res.status(403).json({ message: 'Недействительный refresh токен' });
     }
   };
+
+  getAllUsers = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const response = await this.userService.getAllUsers()
+
+      res.status(200).json(response)
+    } catch (error) {
+      res.status(403).json({ message: 'Ошибка при получении всех Users' });
+    }
+  }
 }

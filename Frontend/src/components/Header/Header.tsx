@@ -1,10 +1,12 @@
 import { Box, Button } from '@mui/material';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-
 
 const Header = () => {
   const { auth, setAuth } = useAuth();
+  const location = useLocation();
+
+  const isAuthPage = location.pathname === '/'; // если ты так назвал свою страницу авторизации
 
   return (
     <Box 
@@ -23,17 +25,19 @@ const Header = () => {
         zIndex: 1000,
       }}
     >
-      {/* <Link to='/tasks'>
-        <Button sx={{ color: 'white', '&:focus': { outline: 'none' } }}>
-          Задачи
-        </Button>
-      </Link> */}
-
-        {auth && <Link to='/'>
-          <Button onClick={() => setAuth(false)} sx={{ color: 'white', '&:focus': { outline: 'none' } }}>
+      {!isAuthPage && auth && (
+        <Link to='/'>
+          <Button
+            onClick={() => {
+              setAuth(false);
+              localStorage.clear();
+            }}
+            sx={{ color: 'white', '&:focus': { outline: 'none' } }}
+          >
             Выйти
           </Button>
-        </Link>}
+        </Link>
+      )}
     </Box>
   );
 };
