@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Box, Button, TextField, Typography, Container } from '@mui/material';
 import { AuthPageState } from '../interfaces/IAuthPageState';
 import { useNavigate } from 'react-router-dom'; 
@@ -46,9 +46,14 @@ const AuthPage: React.FC = () => {
       navigate('/tasks'); 
       setAuth(true);
     } else {
-      timerError(response.message || 'Ошибка при авторизации');
+      timerError(response);
     }
   };
+
+  useEffect(() => {
+    localStorage.removeItem('auth')
+    userService.logout()
+  }, [])
 
   const handleRegister = async () => {
     const { firstName, lastName, patronymic, username, password, confirmPassword } = formData;

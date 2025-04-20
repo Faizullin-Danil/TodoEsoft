@@ -4,12 +4,13 @@ const API_URL = 'http://localhost:3000/';
 
 const $api = axios.create({
     baseURL: API_URL,
-    withCredentials: true, // <-- важно для отправки cookies!
+    withCredentials: true, 
 });  
 
 const authInterceptor = async (config: InternalAxiosRequestConfig) => {
-    const authData = JSON.parse(localStorage.getItem('auth') || '{}');
-    const accessToken = authData?.token;
+    const token = localStorage.getItem('auth')
+    console.log(token)
+    const accessToken = token;
 
     if (accessToken) {
         config.headers['Authorization'] = `Bearer ${accessToken}`;
@@ -19,7 +20,6 @@ const authInterceptor = async (config: InternalAxiosRequestConfig) => {
 
 $api.interceptors.request.use(authInterceptor);
 
-// убери refreshToken из localStorage
 $api.interceptors.response.use(
     (response) => response,
     async (error) => {
@@ -32,7 +32,7 @@ $api.interceptors.response.use(
   
         try {
           const response = await axios.post('http://localhost:3000/api/refresh-token', {}, {
-            withCredentials: true // <-- сюда тоже
+            withCredentials: true 
           });
   
           const { accessToken } = response.data;

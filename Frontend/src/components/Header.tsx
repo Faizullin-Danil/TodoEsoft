@@ -1,7 +1,7 @@
 import { Box, Button } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import UserService from '../../services/usersApi';
+import { useAuth } from '../contexts/AuthContext';
+import UserService from '../services/usersApi';
 
 const userService = new UserService();
 

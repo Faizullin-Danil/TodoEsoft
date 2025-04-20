@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+const bcrypt = require('bcryptjs');
 import { User } from '../interfaces/IUser';
 import { UserRepository } from '../repositories/user.repository';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt';

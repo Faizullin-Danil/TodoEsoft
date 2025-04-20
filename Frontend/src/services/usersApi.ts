@@ -7,7 +7,7 @@ class UserService {
     registration = async (regData: RegistrationData) => {
         try {
             const response = await $api.post('api/registration', regData);
-            console.log(response)
+            console.log('токены', response)
 
             localStorage.setItem('auth', JSON.stringify(response.data));
 
@@ -22,6 +22,7 @@ class UserService {
     login = async (logindData: ILoginDate) => {
         try {
             const response = await $api.post('api/login', logindData)
+            console.log('токены', response)
 
             localStorage.setItem('auth', JSON.stringify(response.data));
 

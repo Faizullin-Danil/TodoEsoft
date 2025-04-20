@@ -2,10 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { UserService } from '../services/user.service';
 import { validationResult } from 'express-validator';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
-import { console } from 'inspector';
-import { AuthRequest } from '../interfaces/IAuthRequest';
-import { User } from '../interfaces/IUser';
-
 
 export class UserController {
   private userService = new UserService();
@@ -23,7 +19,6 @@ export class UserController {
   
       const { name, lastname, patronymic, login, password, role } = req.body;
   
-      console.log('Получены параметры:', { name, lastname, patronymic, login, password, role });
   
       const assignedRole = role && role.trim() !== '' ? role : 'Пользователь';
   
@@ -35,10 +30,15 @@ export class UserController {
         password,
         role: assignedRole,
       });
+
+      res.cookie('refreshToken', result.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', 
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000, 
+      });
   
-      console.log('Результат регистрации:', result);
-  
-      res.status(201).json(result);
+      res.status(201).json({ token: result.token });
     } catch (error: any) {
       console.error('Ошибка в контроллере регистрации:', error);
       res.status(500).json({ message: error.message });

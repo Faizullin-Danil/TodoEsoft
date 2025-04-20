@@ -41,7 +41,9 @@ const TasksPage = () => {
 
     getInfoFromServer();
 
-  }, []);    
+  }, []);   
+  
+  
   
   const handleClear = () => {
     setDateFilter(null);

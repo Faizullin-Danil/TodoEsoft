@@ -12,22 +12,20 @@ dotenv.config();
 const app = express();
 const PORT = process.env.SERVER_PORT || 3000;
 
-// Подключение к базе данных
 const db = knex(config.development);
 
-// Middleware
 app.use(cookieParser());
+
 app.use(cors({
-  origin: 'http://localhost:5173', // укажи фронт, если он на Vite, или свой порт
-  credentials: true               // обязательно для отправки httpOnly cookies
+  origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+  credentials: true
 }));
+
 app.use(express.json());
 
-// Роуты
 app.use('/api', userRoutes);
 app.use('/api', taskRoutes);
 
-// Запуск сервера
 app.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
