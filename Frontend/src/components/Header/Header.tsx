@@ -1,6 +1,9 @@
 import { Box, Button } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import UserService from '../../services/usersApi';
+
+const userService = new UserService();
 
 const Header = () => {
   const { auth, setAuth } = useAuth();
@@ -29,7 +32,8 @@ const Header = () => {
         <Link to='/'>
           <Button
             onClick={() => {
-              setAuth(false);
+              setAuth(false)
+              userService.logout()
               localStorage.clear();
             }}
             sx={{ color: 'white', '&:focus': { outline: 'none' } }}

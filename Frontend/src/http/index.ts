@@ -4,7 +4,8 @@ const API_URL = 'http://localhost:3000/';
 
 const $api = axios.create({
     baseURL: API_URL,
-});
+    withCredentials: true, // <-- важно для отправки cookies!
+});  
 
 const authInterceptor = async (config: InternalAxiosRequestConfig) => {
     const authData = JSON.parse(localStorage.getItem('auth') || '{}');
@@ -18,39 +19,36 @@ const authInterceptor = async (config: InternalAxiosRequestConfig) => {
 
 $api.interceptors.request.use(authInterceptor);
 
+// убери refreshToken из localStorage
 $api.interceptors.response.use(
     (response) => response,
     async (error) => {
-        console.log('я тут')
-        const originalRequest = error.config;
-        const status = error.response?.status;
-
-        // Если токен истек, обновляем
-        if (status === 401 && !originalRequest._retry) {
-            originalRequest._retry = true;
-
-            try {
-                const refreshToken = JSON.parse(localStorage.getItem('auth') || '{}').refreshToken;
-
-                const response = await axios.post('http://localhost:3000/api/refresh-token', {}, {
-                    headers: { Authorization: `Bearer ${refreshToken}` },
-                });
-
-                const { accessToken, refreshToken: newRefreshToken } = response.data;
-
-                // Сохраняем новые токены
-                localStorage.setItem('auth', JSON.stringify({ token: accessToken, refreshToken: newRefreshToken }));
-
-                // Повторяем оригинальный запрос с новым access token
-                originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
-                return axios(originalRequest);
-            } catch (error) {
-                return Promise.reject(error);
-            }
+        console.log('тут')
+      const originalRequest = error.config;
+      const status = error.response?.status;
+  
+      if (status === 401 && !originalRequest._retry) {
+        originalRequest._retry = true;
+  
+        try {
+          const response = await axios.post('http://localhost:3000/api/refresh-token', {}, {
+            withCredentials: true // <-- сюда тоже
+          });
+  
+          const { accessToken } = response.data;
+  
+          localStorage.setItem('auth', JSON.stringify({ token: accessToken }));
+  
+          originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
+          return axios(originalRequest);
+        } catch (error) {
+          return Promise.reject(error);
         }
-
-        return Promise.reject(error);
+      }
+  
+      return Promise.reject(error);
     }
-);
+  );
+  
 
 export default $api;

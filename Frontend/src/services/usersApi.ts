@@ -32,6 +32,10 @@ class UserService {
         }
     }
 
+    logout = async (): Promise<void> =>  {
+        return $api.post('api/logout');
+    }
+
     getAllUsers = async () => {
         try {
             const response = await $api.get('api/users')
