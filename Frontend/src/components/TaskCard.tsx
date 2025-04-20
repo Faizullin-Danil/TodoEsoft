@@ -45,7 +45,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 <Stack direction="row" spacing={2} mt={2} flexWrap="wrap">
                     <Typography variant="body2"><strong>Приоритет:</strong> {priority}</Typography>
                     <Typography 
-                        sx={{ color: new Date > new Date(dueDate) && status !== 'выполнена' ? 'red' : 'black' }}
+                        sx={{
+                            color: new Date().setHours(0, 0, 0, 0) > new Date(dueDate).setHours(0, 0, 0, 0) && status !== 'выполнена'
+                                ? 'red'
+                                : 'black'
+                        }}
                         variant="body2"
                     >
                         <strong>Дата окончания:</strong> 
