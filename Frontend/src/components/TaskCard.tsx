@@ -30,7 +30,13 @@ const TaskCard: React.FC<TaskCardProps> = ({
             onClick={onClick}
         >
             <CardContent>
-                <Typography variant="h6">{title}</Typography>
+                <Typography variant="h6" 
+                    sx={{ 
+                        color: status === 'выполнена' ? 'green' : 'blcak',
+                        fontWeight: status === 'выполнена' ? 'bold' : 'none'
+                    }}>
+                    {title}
+                </Typography>
 
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                     {description}
@@ -38,7 +44,13 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
                 <Stack direction="row" spacing={2} mt={2} flexWrap="wrap">
                     <Typography variant="body2"><strong>Приоритет:</strong> {priority}</Typography>
-                    <Typography variant="body2"><strong>Дата окончания:</strong> {format(new Date(dueDate), 'dd.MM.yyyy')}</Typography>
+                    <Typography 
+                        sx={{ color: new Date > new Date(dueDate) && status !== 'выполнена' ? 'red' : 'black' }}
+                        variant="body2"
+                    >
+                        <strong>Дата окончания:</strong> 
+                        {format(new Date(dueDate), 'dd.MM.yyyy')}
+                    </Typography>
                     <Typography variant="body2"><strong>Ответственный:</strong> {responsible}</Typography>
                     <Typography variant="body2"><strong>Статус:</strong> {status}</Typography>
                 </Stack>

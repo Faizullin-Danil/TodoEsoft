@@ -4,5 +4,5 @@ export interface FormData {
   priority: string;
   dueDate: string;
   responsible: string;
-  status: string;
+  status: 'к выполнению' | 'выполняется' | 'выполнена' | 'отменена'; 
 }

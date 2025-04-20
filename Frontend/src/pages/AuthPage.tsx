@@ -1,42 +1,37 @@
-import { useEffect, useState } from 'react';
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Container,
-} from '@mui/material';
+import { useState } from 'react';
+import { Box, Button, TextField, Typography, Container } from '@mui/material';
+import { AuthPageState } from '../interfaces/IAuthPageState';
 import { useNavigate } from 'react-router-dom'; 
-
-
 import UserService from '../services/usersApi';
 import { useAuth } from '../contexts/AuthContext';
+
 const userService = new UserService();
 
+const AuthPage: React.FC = () => {
+  const [isRegistering, setIsRegistering] = useState<boolean>(false);
+  const [formData, setFormData] = useState<AuthPageState>({
+    firstName: '',
+    lastName: '',
+    patronymic: '',
+    username: '',
+    password: '',
+    confirmPassword: '',
+    error: null,
+  });
 
-
-const AuthPage = () => {
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [patronymic, setPatronymic] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const { setAuth } = useAuth();
-
   const navigate = useNavigate();
 
   const timerError = (textError: string) => {
-    setError(textError)
-    setTimeout(() => {setError('')}, 2000);
+    setFormData(prevState => ({ ...prevState, error: textError }));
+    setTimeout(() => setFormData(prevState => ({ ...prevState, error: null })), 2000);
   }
 
   const handleLogin = async () => {
+    const { username, password } = formData;
+    
     if (!username || !password) {
-      timerError('Пожалуйста, заполните все поля')
-
+      timerError('Пожалуйста, заполните все поля');
       return;
     }
 
@@ -49,35 +44,37 @@ const AuthPage = () => {
 
     if (response.data) {
       navigate('/tasks'); 
-      setAuth(true)
+      setAuth(true);
     } else {
-      timerError(response)
+      timerError(response.message || 'Ошибка при авторизации');
     }
   };
 
   const handleRegister = async () => {
+    const { firstName, lastName, patronymic, username, password, confirmPassword } = formData;
+
     if (!firstName || !lastName || !username || !password || !confirmPassword) {
       timerError('Пожалуйста, заполните все обязательные поля');
       return;
     }
-  
+
     if (password !== confirmPassword) {
       timerError('Пароли не совпадают');
       return;
     }
-  
+
     if (username.length < 5) {
       timerError('Логин должен содержать минимум 5 символов');
       return;
     }
-  
+
     if (password.length < 6) {
       timerError('Пароль должен содержать минимум 6 символов');
       return;
     }
-  
-    setError(null);
-  
+
+    setFormData(prevState => ({ ...prevState, error: null }));
+
     const regData = {
       name: firstName,
       lastname: lastName,
@@ -85,18 +82,16 @@ const AuthPage = () => {
       login: username,
       password: password,
     };
-  
+
     const response = await userService.registration(regData);
 
     if (response.data) {
-      navigate('/tasks'); 
-      setAuth(true)
+      navigate('/tasks');
+      setAuth(true);
     } else {
-      setError(response)
+      setFormData(prevState => ({ ...prevState, error: response.message || 'Ошибка при регистрации' }));
     }
   };
-  
-  
 
   return (
     <Container maxWidth="xs">
@@ -121,24 +116,24 @@ const AuthPage = () => {
               label="Имя"
               variant="outlined"
               fullWidth
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
+              value={formData.firstName}
+              onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               sx={{ mb: 2 }}
             />
             <TextField
               label="Фамилия"
               variant="outlined"
               fullWidth
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              value={formData.lastName}
+              onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
               sx={{ mb: 2 }}
             />
             <TextField
               label="Отчество (не обязательно)"
               variant="outlined"
               fullWidth
-              value={patronymic}
-              onChange={(e) => setPatronymic(e.target.value)}
+              value={formData.patronymic}
+              onChange={(e) => setFormData({ ...formData, patronymic: e.target.value })}
               sx={{ mb: 2 }}
             />
           </>
@@ -148,8 +143,8 @@ const AuthPage = () => {
           label="Логин"
           variant="outlined"
           fullWidth
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          value={formData.username}
+          onChange={(e) => setFormData({ ...formData, username: e.target.value })}
           sx={{ mb: 2 }}
         />
 
@@ -158,8 +153,8 @@ const AuthPage = () => {
           type="password"
           variant="outlined"
           fullWidth
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          value={formData.password}
+          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
           sx={{ mb: 2 }}
         />
 
@@ -169,24 +164,27 @@ const AuthPage = () => {
             type="password"
             variant="outlined"
             fullWidth
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
+            value={formData.confirmPassword}
+            onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
             sx={{ mb: 2 }}
           />
         )}
 
-        {error && (
+        {formData.error && (
           <Typography color="error" variant="body2" sx={{ mb: 2 }}>
-            {error}
+            {formData.error}
           </Typography>
         )}
 
         <Button
           onClick={() => {
             setIsRegistering(!isRegistering);
-            setError(null);
-            setUsername('')
-            setPassword('')
+            setFormData({
+              ...formData,
+              error: null,
+              username: '',
+              password: '',
+            });
           }}
           sx={{ mb: 2 }}
         >

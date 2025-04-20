@@ -20,11 +20,6 @@ export class TaskRepository {
       return tasks
     }
 
-    // async getTask(id: UUID): Promise<Task[]> {
-    //     const task = await db<Task>('tasks').where({ responsible_id: id });
-    //     return task
-    // }
-
     async updateTask(id: number, data: Partial<Task>): Promise<Task> {
       const [updated] = await db<Task>('tasks').where({ id }).update({
         ...data,
@@ -32,8 +27,4 @@ export class TaskRepository {
       }).returning('*');
       return updated;
     }
-
-    // async deleteTask(taskId: number): Promise<void> {
-    //     await db<Task>('tasks').where({ id }).del();
-    // }
 }

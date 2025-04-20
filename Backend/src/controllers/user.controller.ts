@@ -45,23 +45,20 @@ export class UserController {
     }
   };
   
-  // В login контроллере
-  login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  login = async (req: Request, res: Response): Promise<void> => {
     try {
       const { login, password } = req.body;
       
       const result = await this.userService.login(login, password);
 
-      // Устанавливаем refresh токен в httpOnly cookie
       res.cookie('refreshToken', result.refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production', 
-        // secure: false,
         sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней
+        maxAge: 7 * 24 * 60 * 60 * 1000, 
       });
 
-      res.status(200).json({ token: result.token }); // только accessToken отправляем в JSON
+      res.status(200).json({ token: result.token }); 
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -69,14 +66,13 @@ export class UserController {
 
   logout = async (req: any, res: Response, next: NextFunction) => {
     try {
-        res.clearCookie('refreshToken');
-        res.status(200).json('Cookies очищены');
-    } catch (e) {
-        next(e);
+      res.clearCookie('refreshToken');
+      res.status(200).json('Cookies очищены');
+    } catch (error: any) {
+      res.status(500).json({ message: 'Ошибка при выходе', error: error.message });
     }
   };
 
-  // В refreshToken контроллере
   refreshToken = async (req: Request, res: Response): Promise<void> => {
     try {
       const tokenFromCookie = req.cookies.refreshToken;

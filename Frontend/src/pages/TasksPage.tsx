@@ -1,29 +1,29 @@
 import { Autocomplete, Box, Button, TextField } from '@mui/material';
 import TaskCard from "../components/TaskCard";
-import { useEffect, useState } from 'react';
 import Modal from '../components/Modal';
+import { useEffect, useState } from 'react';
 import { Task } from '../interfaces/ITask';
+import { User } from '../interfaces/IUser';
 import UserService from '../services/usersApi';
 import TaskService from '../services/tasksApi';
-import { jwtDecode } from 'jwt-decode';
-import { User } from '../interfaces/IUser';
 import { useAuth } from '../contexts/AuthContext';
+import { jwtDecode } from 'jwt-decode';
 
 const taskService = new TaskService();
 const userService = new UserService();
 
 const TasksPage = () => {
-  const [role, setRole] = useState()
+  const [role, setRole] = useState<string>('')
   const [tasks, setTasks] = useState<Task[] | null>()
-  const [users, setUsers] = useState<User[]>([]); // было User
+  const [users, setUsers] = useState<User[]>([]); 
   const [dateFilter, setDateFilter] = useState<string | null>(null);
   const [responsibleFilter, setResponsibleFilter] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState<boolean>(false)
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null); // Инициализируем как null
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const { setAuth } = useAuth();
 
-  const tokens = JSON.parse(localStorage.getItem('auth'));
-  const userData = jwtDecode(tokens.token)
+  const storage = JSON.parse(localStorage.getItem('auth')!) as { token: string };
+  const userData = jwtDecode<{ id: string; role: string }>(storage.token);
 
   useEffect(() => {
     setAuth(true)
@@ -52,16 +52,16 @@ const TasksPage = () => {
   const onWeek = new Date();
   onWeek.setDate(onWeek.getDate() + 7);  
 
-  let tasksByRole = []
+  let tasksByRole: Task[] = [];
 
   if (role === 'Пользователь') {
-    tasksByRole = tasks?.filter((task) => task.responsible_id === userData.id);
+    tasksByRole = tasks?.filter((task) => task.responsible_id === userData.id) || [];
   } else {
-    tasksByRole = tasks;
+    tasksByRole = tasks || [];
   }
   
 
-  const filteredTasks = tasksByRole?.filter((task) => {
+  const filteredTasks = tasksByRole?.filter((task: Task) => {
     if (!tasks) return [];
     
     const due = new Date(task.due_date);
@@ -78,14 +78,8 @@ const TasksPage = () => {
     return matchesDate && matchesResponsible;
   }) || [];
 
-  
-
-  // console.log('tasks', tasks)
-  // console.log('userData', userData)
-
-
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', width: 850}}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', width: 900}}>
       <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1 }}>
         <Autocomplete
           disablePortal

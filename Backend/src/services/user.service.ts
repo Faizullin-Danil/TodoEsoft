@@ -24,9 +24,7 @@ export class UserService {
     return { token, refreshToken };
   }
 
-  
-
-  async login(login: string, password: string) {
+  async login(login: string, password: string): Promise<{ token: string, refreshToken: string }> {
     const user = await this.userRepository.findByLogin(login);
 
     if (user === null) {
@@ -42,11 +40,6 @@ export class UserService {
     const refreshToken = generateRefreshToken({ id: user.id, role: user.role });
 
     return { token, refreshToken };
-  }
-
-  async getUserById(userId: string): Promise<User | null> {
-    const user = await this.userRepository.findById(userId);
-    return user || null;
   }
 
   async getAllUsers(): Promise<User[]> {

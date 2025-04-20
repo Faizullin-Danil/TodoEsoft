@@ -1,35 +1,27 @@
-import React, { useState, useEffect, ChangeEvent } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  MenuItem,
-  Box,
-} from '@mui/material';
-import { Task } from '../interfaces/ITask';
-import { User } from '../interfaces/IUser';
-import { FormData } from '../interfaces/IFormData';
-import { Errors } from '../interfaces/IErrors';
-import TaskService from '../services/tasksApi';
-import { jwtDecode } from 'jwt-decode';
+import React, { useState, useEffect, ChangeEvent } from 'react'
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem, Box } from '@mui/material'
+import { Task } from '../interfaces/ITask'
+import { User } from '../interfaces/IUser'
+import { FormData } from '../interfaces/IFormData'
+import { Errors } from '../interfaces/IErrors'
+import TaskService from '../services/tasksApi'
+import { jwtDecode } from 'jwt-decode'
 
-const taskService = new TaskService();
-const priorities = ['низкий', 'средний', 'высокий'];
-const statuses = ['к выполнению', 'выполняется', 'выполнена', 'отменена'];
+const taskService = new TaskService()
+const priorities = ['низкий', 'средний', 'высокий']
+const statuses = ['к выполнению', 'выполняется', 'выполнена', 'отменена']
 
 interface TaskModalProps {
-  id: string;
+  setTasks: React.Dispatch<React.SetStateAction<Task[] | null | undefined>>;  
   task: Task | null;
-  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
+  users: User[];
+  id: string;
   role: string;
   open: boolean;
   setModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setSelectedTask: React.Dispatch<React.SetStateAction<Task | null>>;
-  users: User[];
 }
+
 
 const TaskModal: React.FC<TaskModalProps> = ({
   id,
@@ -126,8 +118,8 @@ const TaskModal: React.FC<TaskModalProps> = ({
         };
 
         const createdTask = await taskService.createTask(newTask);
-        setTasks(prev => [...prev, createdTask]);
-      } else {
+        setTasks(prev => [...(prev || []), createdTask]); 
+              } else {
         const updatedTask: Task = {
           ...task,
           title: formData.title,
@@ -140,7 +132,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
         };
 
         await taskService.updateTask(task.id, updatedTask);
-        setTasks(prev => prev.map(t => (t.id === updatedTask.id ? updatedTask : t)));
+        setTasks(prev => prev ? prev.map(t => (t.id === updatedTask.id ? updatedTask : t)) : []); 
       }
 
       window.location.reload();
@@ -156,8 +148,6 @@ const TaskModal: React.FC<TaskModalProps> = ({
   };
 
   const isCreating = !task;
-  const isUser = role === 'Пользователь';
-  const isManager = role === 'Руководитель';
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth>

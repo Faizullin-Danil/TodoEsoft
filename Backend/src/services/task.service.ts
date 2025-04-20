@@ -14,14 +14,6 @@ export class TaskService {
         return this.taskRepository.getAllTasks();
     }
     
-    // async getTaskByResponsibleId(id: UUID): Promise<Task[]> {
-    //     return this.taskRepository.getTask(id);
-    // }
-
-    //   async deleteTask(id: string): Promise<void> {
-    //     return this.taskRepository.deleteTask(id);
-    //   }
-    
     async updateTask(id: string, data: Partial<Task>): Promise<Task> {
         return this.taskRepository.updateTask(parseInt(id), data);
     }
