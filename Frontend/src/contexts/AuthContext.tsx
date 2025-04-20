@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext } from 'react';
+
 interface AuthContextType {
   auth: boolean;
   setAuth: React.Dispatch<React.SetStateAction<boolean>>;

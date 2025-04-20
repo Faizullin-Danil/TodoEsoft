@@ -12,14 +12,14 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
   try {
     const decoded = verifyAccessToken(token);
     if (typeof decoded === 'string' || !decoded.id || !decoded.role) {
-      res.status(403).json({ message: 'Невалидный токен' });
+      res.status(401).json({ message: 'Невалидный токен' });
       return
     }
 
     req.user = decoded;  
     next();  
   } catch (error) {
-    res.status(403).json({ message: 'Невалидный токен' });
+    res.status(401).json({ message: 'Невалидный токен' });
     return
   }
 };

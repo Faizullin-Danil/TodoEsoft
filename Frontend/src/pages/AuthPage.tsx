@@ -94,7 +94,6 @@ const AuthPage = () => {
     } else {
       setError(response)
     }
-    // console.log(response)
   };
   
   

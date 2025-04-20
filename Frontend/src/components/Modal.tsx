@@ -232,7 +232,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
 
           {task && (
             <TextField
-              sx={{mt: 1}}
+              sx={{mt: 1 }}
               label="Статус"
               select
               fullWidth

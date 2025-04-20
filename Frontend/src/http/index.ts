@@ -1,5 +1,4 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
-import { useAuth } from '../contexts/AuthContext'; // Подключаем контекст для обновления токенов
 
 const API_URL = 'http://localhost:3000/';
 
@@ -19,10 +18,10 @@ const authInterceptor = async (config: InternalAxiosRequestConfig) => {
 
 $api.interceptors.request.use(authInterceptor);
 
-// Интерсептор для ответа
 $api.interceptors.response.use(
     (response) => response,
     async (error) => {
+        console.log('я тут')
         const originalRequest = error.config;
         const status = error.response?.status;
 
