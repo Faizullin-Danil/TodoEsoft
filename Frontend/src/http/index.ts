@@ -1,6 +1,9 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
 
-const API_URL = 'http://localhost:3000/';
+// const API_URL = 'http://localhost:3000/';
+
+const API_URL = import.meta.env.VITE_API_URL;
+
 
 const $api = axios.create({
     baseURL: API_URL,
@@ -31,9 +34,10 @@ $api.interceptors.response.use(
         originalRequest._retry = true;
   
         try {
-          const response = await axios.post('http://localhost:3000/api/refresh-token', {}, {
+          const response = await axios.post(`${API_URL}api/refresh-token`, {}, {
             withCredentials: true 
           });
+          
   
           const { accessToken } = response.data;
   
