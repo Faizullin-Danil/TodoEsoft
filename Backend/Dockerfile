@@ -9,9 +9,7 @@ RUN npm install
 COPY . .
 
 RUN npm run build
-RUN npm run migrate:build
 
+EXPOSE 3000
 
-EXPOSE ${SERVER_PORT}
-
-CMD npm run migrate:build && npm run start
+CMD ["npm", "run", "start"]
