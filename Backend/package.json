@@ -8,6 +8,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "migrate": "knex --knexfile knexfile.ts migrate:latest",
+    "seed": "knex seed:run --specific=users_seed.ts --knexfile=src/knexfile.ts && knex seed:run --specific=tasks_seed.ts --knexfile=src/knexfile.ts",
+    "seed:build": "knex seed:run --specific=users_seed.js --knexfile=dist/knexfile.js && knex seed:run --specific=tasks_seed.js --knexfile=dist/knexfile.js",
     "migrate:build": "knex --knexfile dist/knexfile.js migrate:latest"
   },
   "keywords": [],
